@@ -1,0 +1,53 @@
+============================================================
+  AUTO-PASTE
+  Copy once. It lands in Notepad.
+============================================================
+
+You do not type Ctrl+V. Copy a string (or keep a list of
+links) and Auto-paste puts it into Notepad for you.
+
+
+WINDOWS — three double-clicks
+--------------------------------
+  1.  1-Install.bat        finds Python / Node / PowerShell
+  2.  2-Edit-list.bat      optional — edit your saved list
+  3.  3-Start.bat          watch the clipboard
+
+Same files, other names:
+  install.bat              =  1-Install.bat
+  EDIT-LINKS.bat           =  2-Edit-list.bat
+  START.bat                =  menu (watch / list / live / web)
+  OPEN-WEB.bat             =  browser notepad, no install
+
+
+NO INSTALL AT ALL
+--------------------------------
+  Double-click OPEN-WEB.bat
+  Click  "Paste clipboard & keep watching"
+  Copy anything. It appears on the page.
+
+
+THE LIST (links.txt)
+--------------------------------
+  One string or URL per line.
+  Lines starting with # are ignored.
+
+  START.bat → "Paste everything in links.txt"
+  START.bat → "Paste the next item"
+  START.bat → "Collect copies into links.txt"
+
+
+OTHER COMPUTERS
+--------------------------------
+  python auto_paste.py --watch
+  node auto-paste.js --watch
+
+  Read README.md and INSTALL.md for macOS / Linux.
+
+
+SAFETY
+--------------------------------
+  Auto-paste only writes TEXT into Notepad (or the web page).
+  It never runs what you copy, never opens random programs,
+  and never types into other apps unless you pick
+  "Live-paste" (Notepad only).

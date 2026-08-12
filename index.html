@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Untitled — Notepad</title>
+  <title>Untitled — Auto-paste Notepad</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232b5dff'/%3E%3Crect x='8' y='7' width='16' height='18' rx='2' fill='%23fffcf6'/%3E%3Cpath d='M11 12h10M11 16h10M11 20h6' stroke='%232b5dff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -20,6 +21,7 @@
       --good: #0f8a4b;
       --shadow: 0 24px 60px rgba(28, 32, 48, 0.16);
       --rule: rgba(80, 110, 180, 0.09);
+      --drawer: 300px;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
@@ -36,8 +38,8 @@
     }
 
     .desk {
-      width: min(980px, 100%);
-      height: min(720px, calc(100vh - 56px));
+      width: min(1100px, 100%);
+      height: min(740px, calc(100vh - 56px));
       background: var(--chrome);
       border: 1px solid #fff;
       border-radius: 14px;
@@ -64,7 +66,7 @@
       padding: 7px 12px;
       font-size: 13px;
       font-weight: 500;
-      max-width: 240px;
+      max-width: 280px;
     }
     .tab .dot {
       width: 8px; height: 8px; border-radius: 50%;
@@ -83,6 +85,7 @@
       padding: 4px 10px 6px;
       border-bottom: 1px solid var(--line);
       background: linear-gradient(#f7f8fb, #eef0f5);
+      flex-wrap: wrap;
     }
     .menubar button, .ghost {
       border: 0; background: transparent; color: var(--ink);
@@ -102,7 +105,12 @@
       display: inline-block;
     }
 
-    .stage { position: relative; flex: 1; min-height: 0; background: var(--paper); }
+    .body {
+      flex: 1; min-height: 0;
+      display: flex;
+    }
+
+    .stage { position: relative; flex: 1; min-width: 0; min-height: 0; background: var(--paper); }
     textarea {
       width: 100%; height: 100%;
       border: 0; resize: none; outline: none;
@@ -120,6 +128,52 @@
       tab-size: 4;
     }
 
+    .drawer {
+      width: 0;
+      overflow: hidden;
+      background: #f7f8fb;
+      border-left: 0 solid var(--line);
+      transition: width .22s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .desk.list-open .drawer {
+      width: var(--drawer);
+      border-left-width: 1px;
+    }
+    .drawer-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px 8px;
+      font-size: 13px; font-weight: 600;
+    }
+    .drawer-help {
+      padding: 0 12px 8px;
+      font-size: 11px; color: var(--muted); line-height: 1.4;
+    }
+    .drawer-actions {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      padding: 0 10px 8px;
+    }
+    .drawer-actions button {
+      border: 1px solid var(--line); background: #fff;
+      border-radius: 7px; padding: 5px 8px;
+      font: 500 11px Outfit, sans-serif; cursor: pointer;
+    }
+    .drawer-actions button:hover { background: var(--accent-soft); border-color: #c9d4ff; }
+    .list {
+      flex: 1; overflow: auto; padding: 0 8px 8px;
+    }
+    .list button.item {
+      display: block; width: 100%; text-align: left;
+      border: 0; background: transparent;
+      border-radius: 8px; padding: 8px 8px;
+      font: 12.5px/1.35 "IBM Plex Mono", Consolas, monospace;
+      color: var(--ink); cursor: pointer;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .list button.item:hover { background: #eceff6; }
+    .list .empty { color: var(--muted); font-size: 12px; padding: 12px 8px; }
+
     .gate {
       position: absolute; inset: 0;
       display: grid; place-items: center;
@@ -128,7 +182,7 @@
     }
     .gate.hidden { display: none; }
     .card {
-      width: min(440px, calc(100% - 40px));
+      width: min(460px, calc(100% - 40px));
       background: #fff;
       border: 1px solid var(--line);
       border-radius: 16px;
@@ -159,6 +213,19 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    .help {
+      position: absolute; inset: 0;
+      display: none; place-items: center;
+      background: rgba(28, 29, 33, 0.28);
+    }
+    .help.show { display: grid; }
+    .help .card { text-align: left; }
+    .help kbd {
+      font: 500 12px "IBM Plex Mono", monospace;
+      background: #eef0f5; border-radius: 4px; padding: 1px 6px;
+    }
+    .help ul { margin: 0; padding: 0 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
     .statusbar {
       display: flex; justify-content: space-between; gap: 12px;
       padding: 6px 14px;
@@ -171,15 +238,17 @@
 
     input[type="file"] { display: none; }
 
-    @media (max-width: 640px) {
+    @media (max-width: 720px) {
       body { padding: 0; }
       .desk { height: 100vh; border-radius: 0; }
       textarea { padding: 16px 16px 32px 18px; font-size: 14px; }
+      .desk.list-open .drawer { width: min(var(--drawer), 70vw); }
+      :root { --drawer: 240px; }
     }
   </style>
 </head>
 <body>
-  <div class="desk">
+  <div class="desk" id="desk">
     <div class="titlebar">
       <div class="tabs">
         <div class="tab">
@@ -195,23 +264,55 @@
       <button type="button" id="btnOpen">Open</button>
       <button type="button" id="btnSave">Save</button>
       <button type="button" id="btnPaste">Paste now</button>
+      <button type="button" id="btnList">List</button>
       <span class="grow"></span>
+      <button type="button" class="ghost" id="btnAppend" title="Append new copies under the current text">
+        <span class="pill off" id="appendPill"><i></i> Replace</span>
+      </button>
       <button type="button" class="ghost" id="btnWatch" title="Watch clipboard and paste new copies automatically">
         <span class="pill" id="watchPill"><i></i> Auto-paste on</span>
       </button>
     </div>
 
-    <div class="stage">
-      <textarea id="editor" spellcheck="true" placeholder="Copied text will appear here…"></textarea>
-      <div class="gate" id="gate">
-        <div class="card">
-          <h1>Auto-paste into Notepad</h1>
-          <p>Click once so the browser can read your clipboard. Anything you copy after that is pasted here automatically.</p>
-          <button class="primary" id="unlock">Paste clipboard &amp; keep watching</button>
-          <div class="hint">Uses the Clipboard API · text only · stays in this tab</div>
+    <div class="body">
+      <div class="stage">
+        <textarea id="editor" spellcheck="true" placeholder="Copied text will appear here…"></textarea>
+        <div class="gate" id="gate">
+          <div class="card">
+            <h1>Auto-paste into Notepad</h1>
+            <p>Click once so the browser can read your clipboard. Anything you copy after that is pasted here automatically. Optional: keep a list of links and snippets in the List drawer.</p>
+            <button class="primary" id="unlock">Paste clipboard &amp; keep watching</button>
+            <div class="hint">Uses the Clipboard API · text only · stays in this tab · press ? for shortcuts</div>
+          </div>
         </div>
+        <div class="help" id="help">
+          <div class="card">
+            <h1>Shortcuts</h1>
+            <ul>
+              <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd> paste clipboard now</li>
+              <li><kbd>Ctrl</kbd>+<kbd>S</kbd> save as .txt</li>
+              <li><kbd>Ctrl</kbd>+<kbd>N</kbd> new document</li>
+              <li><kbd>Ctrl</kbd>+<kbd>L</kbd> toggle the paste list</li>
+              <li><kbd>?</kbd> this help</li>
+            </ul>
+            <p class="hint">Click anywhere to close</p>
+          </div>
+        </div>
+        <div class="toast" id="toast">Pasted from clipboard</div>
       </div>
-      <div class="toast" id="toast">Pasted from clipboard</div>
+
+      <aside class="drawer" id="drawer" aria-label="Paste list">
+        <div class="drawer-head">Paste list <span id="listCount">0</span></div>
+        <div class="drawer-help">Same idea as <code>links.txt</code>. Click a row to paste it. Import a file to load your desktop list.</div>
+        <div class="drawer-actions">
+          <button type="button" id="btnAddClip">Add clipboard</button>
+          <button type="button" id="btnPasteAll">Paste all</button>
+          <button type="button" id="btnImport">Import</button>
+          <button type="button" id="btnExport">Export</button>
+          <button type="button" id="btnClearList">Clear</button>
+        </div>
+        <div class="list" id="list"></div>
+      </aside>
     </div>
 
     <div class="statusbar">
@@ -222,6 +323,7 @@
   </div>
 
   <input id="fileOpen" type="file" accept=".txt,text/plain" />
+  <input id="fileImport" type="file" accept=".txt,text/plain" />
 
   <script>
     const editor = document.getElementById("editor");
@@ -230,14 +332,73 @@
     const tabName = document.getElementById("tabName");
     const statusMsg = document.getElementById("statusMsg");
     const watchPill = document.getElementById("watchPill");
+    const appendPill = document.getElementById("appendPill");
     const lnEl = document.getElementById("ln");
     const colEl = document.getElementById("col");
     const charsEl = document.getElementById("chars");
+    const desk = document.getElementById("desk");
+    const listEl = document.getElementById("list");
+    const listCount = document.getElementById("listCount");
+    const help = document.getElementById("help");
+
+    const LIST_KEY = "auto-paste-list";
 
     let watch = true;
+    let appendMode = false;
     let lastClip = null;
     let toastTimer = 0;
     let dirty = false;
+    let items = loadStoredList();
+
+    function loadStoredList() {
+      try {
+        const raw = localStorage.getItem(LIST_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveStoredList() {
+      localStorage.setItem(LIST_KEY, JSON.stringify(items));
+    }
+
+    function parseListText(text) {
+      return String(text || "")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith("#"));
+    }
+
+    function renderList() {
+      listCount.textContent = String(items.length);
+      if (!items.length) {
+        listEl.innerHTML = '<div class="empty">Empty. Add the clipboard or import links.txt.</div>';
+        return;
+      }
+      listEl.innerHTML = "";
+      items.forEach((item, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "item";
+        btn.title = item;
+        btn.textContent = item;
+        btn.addEventListener("click", () => {
+          putText(item, { fromClipboard: false, announce: true, toastMsg: "Pasted list item" });
+          gate.classList.add("hidden");
+        });
+        btn.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          items.splice(idx, 1);
+          saveStoredList();
+          renderList();
+          showToast("Removed from list");
+        });
+        listEl.appendChild(btn);
+      });
+    }
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -255,15 +416,22 @@
       charsEl.textContent = String(editor.value.length);
     }
 
-    function setText(text, { announce = true, fromClipboard = false } = {}) {
-      editor.value = text ?? "";
+    function putText(text, { announce = true, fromClipboard = false, toastMsg = "Pasted from clipboard" } = {}) {
+      const incoming = text ?? "";
+      if (appendMode && editor.value) {
+        editor.value = editor.value.endsWith("\n")
+          ? editor.value + incoming
+          : editor.value + "\n" + incoming;
+      } else {
+        editor.value = incoming;
+      }
       dirty = !fromClipboard;
       caretStats();
       if (fromClipboard) {
         tabName.textContent = "Clipboard";
-        document.title = "Clipboard — Notepad";
+        document.title = "Clipboard — Auto-paste Notepad";
       }
-      if (announce) showToast("Pasted from clipboard");
+      if (announce) showToast(toastMsg);
     }
 
     async function readClipboard() {
@@ -284,7 +452,7 @@
           return false;
         }
         lastClip = text;
-        setText(text, { fromClipboard: true });
+        putText(text, { fromClipboard: true });
         statusMsg.textContent = "Auto-pasted " + new Date().toLocaleTimeString();
         return true;
       } catch (err) {
@@ -311,7 +479,7 @@
         const text = await readClipboard();
         if (text && text !== lastClip) {
           lastClip = text;
-          setText(text, { fromClipboard: true });
+          putText(text, { fromClipboard: true });
           statusMsg.textContent = "Auto-pasted " + new Date().toLocaleTimeString();
         }
       } catch {
@@ -337,12 +505,23 @@
       statusMsg.textContent = watch ? "Watching clipboard…" : "Auto-paste paused";
     });
 
+    document.getElementById("btnAppend").addEventListener("click", () => {
+      appendMode = !appendMode;
+      appendPill.classList.toggle("off", !appendMode);
+      appendPill.innerHTML = appendMode ? "<i></i> Append" : "<i></i> Replace";
+      statusMsg.textContent = appendMode ? "New copies will be appended" : "New copies replace the page";
+    });
+
+    document.getElementById("btnList").addEventListener("click", () => {
+      desk.classList.toggle("list-open");
+    });
+
     document.getElementById("btnNew").addEventListener("click", () => {
       editor.value = "";
       lastClip = null;
       dirty = false;
       tabName.textContent = "Untitled";
-      document.title = "Untitled — Notepad";
+      document.title = "Untitled — Auto-paste Notepad";
       caretStats();
       editor.focus();
     });
@@ -353,21 +532,90 @@
     document.getElementById("fileOpen").addEventListener("change", async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      setText(await file.text(), { announce: false });
+      putText(await file.text(), { announce: false });
       tabName.textContent = file.name;
-      document.title = file.name + " — Notepad";
+      document.title = file.name + " — Auto-paste Notepad";
       gate.classList.add("hidden");
       e.target.value = "";
     });
 
-    document.getElementById("btnSave").addEventListener("click", () => {
-      const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+    function downloadText(name, text) {
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
       const a = document.createElement("a");
-      const name = (tabName.textContent || "Untitled").replace(/[^\w.\- ]+/g, "") || "Untitled";
       a.href = URL.createObjectURL(blob);
-      a.download = name.endsWith(".txt") ? name : name + ".txt";
+      a.download = name;
       a.click();
       URL.revokeObjectURL(a.href);
+    }
+
+    document.getElementById("btnSave").addEventListener("click", () => {
+      const name = (tabName.textContent || "Untitled").replace(/[^\w.\- ]+/g, "") || "Untitled";
+      downloadText(name.endsWith(".txt") ? name : name + ".txt", editor.value);
+    });
+
+    document.getElementById("btnAddClip").addEventListener("click", async () => {
+      try {
+        const text = (await readClipboard()).replace(/\r?\n$/, "");
+        if (!text.trim()) {
+          showToast("Clipboard is empty");
+          return;
+        }
+        if (items.includes(text)) {
+          showToast("Already in the list");
+          return;
+        }
+        items.push(text);
+        saveStoredList();
+        renderList();
+        showToast("Saved to list");
+      } catch {
+        showToast("Couldn't read clipboard");
+      }
+    });
+
+    document.getElementById("btnPasteAll").addEventListener("click", () => {
+      if (!items.length) {
+        showToast("List is empty");
+        return;
+      }
+      putText(items.join("\n"), { fromClipboard: false, toastMsg: "Pasted whole list" });
+      gate.classList.add("hidden");
+    });
+
+    document.getElementById("btnImport").addEventListener("click", () => {
+      document.getElementById("fileImport").click();
+    });
+    document.getElementById("fileImport").addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const incoming = parseListText(await file.text());
+      const seen = new Set(items);
+      let added = 0;
+      incoming.forEach((item) => {
+        if (!seen.has(item)) {
+          seen.add(item);
+          items.push(item);
+          added += 1;
+        }
+      });
+      saveStoredList();
+      renderList();
+      desk.classList.add("list-open");
+      showToast(added ? "Imported " + added + " item(s)" : "Nothing new to import");
+      e.target.value = "";
+    });
+
+    document.getElementById("btnExport").addEventListener("click", () => {
+      const body = "# Auto-paste list\n\n" + items.join("\n") + (items.length ? "\n" : "");
+      downloadText("links.txt", body);
+    });
+
+    document.getElementById("btnClearList").addEventListener("click", () => {
+      if (!items.length) return;
+      items = [];
+      saveStoredList();
+      renderList();
+      showToast("List cleared");
     });
 
     editor.addEventListener("input", () => { dirty = true; caretStats(); });
@@ -381,9 +629,33 @@
       if (text == null) return;
       e.preventDefault();
       lastClip = text;
-      setText(text, { fromClipboard: true });
+      putText(text, { fromClipboard: true });
       gate.classList.add("hidden");
     });
+
+    document.addEventListener("keydown", (e) => {
+      const key = e.key.toLowerCase();
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && document.activeElement !== editor) {
+        help.classList.toggle("show");
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === "v") {
+        e.preventDefault();
+        document.getElementById("btnPaste").click();
+      } else if ((e.ctrlKey || e.metaKey) && key === "s") {
+        e.preventDefault();
+        document.getElementById("btnSave").click();
+      } else if ((e.ctrlKey || e.metaKey) && key === "n") {
+        e.preventDefault();
+        document.getElementById("btnNew").click();
+      } else if ((e.ctrlKey || e.metaKey) && key === "l") {
+        e.preventDefault();
+        desk.classList.toggle("list-open");
+      } else if (e.key === "Escape") {
+        help.classList.remove("show");
+      }
+    });
+    help.addEventListener("click", () => help.classList.remove("show"));
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") watchTick();
@@ -392,6 +664,7 @@
     setInterval(watchTick, 700);
 
     caretStats();
+    renderList();
   </script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+# Auto-paste list — one string or URL per line.
+# Lines starting with # are ignored. Blank lines are ignored.
+# Edit this file with 2-Edit-list.bat or EDIT-LINKS.bat.
+
+https://example.com
+https://example.org
+https://wikipedia.org
+
+# Snippets work too, not just links:
+Auto-paste demo — copied from links.txt

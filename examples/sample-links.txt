@@ -1,0 +1,9 @@
+# Sample paste list
+# Copy this file to links.txt (1-Install.bat does that for you).
+
+https://example.com
+https://example.org/docs
+https://wikipedia.org
+
+Good morning — saved snippet
+Thank you for the update.
