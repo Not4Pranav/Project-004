@@ -6,7 +6,7 @@ It does **not**:
 
 - type into other applications
 - press Enter
-- send messages on WhatsApp, Discord, or anywhere else
+- send messages to other applications
 
 ## Run from source
 
