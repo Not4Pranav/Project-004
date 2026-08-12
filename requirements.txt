@@ -1,0 +1,3 @@
+# Runtime: Python 3.10+ standard library only (tkinter).
+# Optional Windows packaging:
+pyinstaller>=6.0.0
