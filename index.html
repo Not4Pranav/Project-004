@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Untitled — Notepad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #e8eaef;
+      --chrome: #f4f5f8;
+      --paper: #fffcf6;
+      --ink: #1c1d21;
+      --muted: #6b7080;
+      --line: #d5d8e0;
+      --accent: #2b5dff;
+      --accent-soft: #e8edff;
+      --good: #0f8a4b;
+      --shadow: 0 24px 60px rgba(28, 32, 48, 0.16);
+      --rule: rgba(80, 110, 180, 0.09);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Outfit, Segoe UI, system-ui, sans-serif;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #dfe6ff 0%, transparent 50%),
+        radial-gradient(900px 400px at 100% 0%, #ffe8d2 0%, transparent 46%),
+        var(--bg);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      padding: 28px 18px;
+    }
+
+    .desk {
+      width: min(980px, 100%);
+      height: min(720px, calc(100vh - 56px));
+      background: var(--chrome);
+      border: 1px solid #fff;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px 0;
+      user-select: none;
+    }
+    .tabs { display: flex; gap: 6px; align-items: end; min-width: 0; flex: 1; }
+    .tab {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      max-width: 240px;
+    }
+    .tab .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 0 3px rgba(15, 138, 75, 0.12);
+    }
+    .tab .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .win-btns { display: flex; gap: 8px; padding: 4px 6px 8px; }
+    .win-btns span {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #d9dde6;
+    }
+
+    .menubar {
+      display: flex; align-items: center; gap: 2px;
+      padding: 4px 10px 6px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(#f7f8fb, #eef0f5);
+    }
+    .menubar button, .ghost {
+      border: 0; background: transparent; color: var(--ink);
+      font: 500 13px Outfit, sans-serif;
+      padding: 6px 10px; border-radius: 7px; cursor: pointer;
+    }
+    .menubar button:hover, .ghost:hover { background: #e4e7ef; }
+    .menubar .grow { flex: 1; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--accent-soft); color: #1d3db8;
+      border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+    }
+    .pill.off { background: #eceef3; color: var(--muted); }
+    .pill i {
+      width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+      display: inline-block;
+    }
+
+    .stage { position: relative; flex: 1; min-height: 0; background: var(--paper); }
+    textarea {
+      width: 100%; height: 100%;
+      border: 0; resize: none; outline: none;
+      background:
+        linear-gradient(var(--paper), var(--paper)) padding-box,
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0, transparent 27px,
+          var(--rule) 28px
+        );
+      background-attachment: local;
+      color: var(--ink);
+      font: 15.5px/28px "IBM Plex Mono", Consolas, monospace;
+      padding: 22px 28px 40px 36px;
+      tab-size: 4;
+    }
+
+    .gate {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      background: rgba(255, 252, 246, 0.82);
+      backdrop-filter: blur(6px);
+    }
+    .gate.hidden { display: none; }
+    .card {
+      width: min(440px, calc(100% - 40px));
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px 26px 22px;
+      box-shadow: 0 16px 40px rgba(30, 36, 52, 0.12);
+      text-align: center;
+    }
+    .card h1 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.03em; }
+    .card p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .primary {
+      border: 0; cursor: pointer;
+      background: var(--ink); color: #fff;
+      font: 600 14px Outfit, sans-serif;
+      padding: 11px 18px; border-radius: 10px;
+      width: 100%;
+    }
+    .primary:hover { filter: brightness(1.08); }
+    .hint { margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+    .toast {
+      position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(12px);
+      background: #1c1d21; color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 500;
+      opacity: 0; pointer-events: none;
+      transition: .25s ease;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .statusbar {
+      display: flex; justify-content: space-between; gap: 12px;
+      padding: 6px 14px;
+      background: #eef0f5;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .statusbar b { color: var(--ink); font-weight: 600; }
+
+    input[type="file"] { display: none; }
+
+    @media (max-width: 640px) {
+      body { padding: 0; }
+      .desk { height: 100vh; border-radius: 0; }
+      textarea { padding: 16px 16px 32px 18px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="desk">
+    <div class="titlebar">
+      <div class="tabs">
+        <div class="tab">
+          <span class="dot" title="Auto-paste armed"></span>
+          <span class="name" id="tabName">Untitled</span>
+        </div>
+      </div>
+      <div class="win-btns" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="menubar">
+      <button type="button" id="btnNew">New</button>
+      <button type="button" id="btnOpen">Open</button>
+      <button type="button" id="btnSave">Save</button>
+      <button type="button" id="btnPaste">Paste now</button>
+      <span class="grow"></span>
+      <button type="button" class="ghost" id="btnWatch" title="Watch clipboard and paste new copies automatically">
+        <span class="pill" id="watchPill"><i></i> Auto-paste on</span>
+      </button>
+    </div>
+
+    <div class="stage">
+      <textarea id="editor" spellcheck="true" placeholder="Copied text will appear here…"></textarea>
+      <div class="gate" id="gate">
+        <div class="card">
+          <h1>Auto-paste into Notepad</h1>
+          <p>Click once so the browser can read your clipboard. Anything you copy after that is pasted here automatically.</p>
+          <button class="primary" id="unlock">Paste clipboard &amp; keep watching</button>
+          <div class="hint">Uses the Clipboard API · text only · stays in this tab</div>
+        </div>
+      </div>
+      <div class="toast" id="toast">Pasted from clipboard</div>
+    </div>
+
+    <div class="statusbar">
+      <span>Ln <b id="ln">1</b>, Col <b id="col">1</b></span>
+      <span id="statusMsg">Waiting for clipboard…</span>
+      <span><b id="chars">0</b> characters · UTF-8</span>
+    </div>
+  </div>
+
+  <input id="fileOpen" type="file" accept=".txt,text/plain" />
+
+  <script>
+    const editor = document.getElementById("editor");
+    const gate = document.getElementById("gate");
+    const toast = document.getElementById("toast");
+    const tabName = document.getElementById("tabName");
+    const statusMsg = document.getElementById("statusMsg");
+    const watchPill = document.getElementById("watchPill");
+    const lnEl = document.getElementById("ln");
+    const colEl = document.getElementById("col");
+    const charsEl = document.getElementById("chars");
+
+    let watch = true;
+    let lastClip = null;
+    let toastTimer = 0;
+    let dirty = false;
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    function caretStats() {
+      const pos = editor.selectionStart || 0;
+      const upto = editor.value.slice(0, pos);
+      const lines = upto.split("\n");
+      lnEl.textContent = String(lines.length);
+      colEl.textContent = String(lines[lines.length - 1].length + 1);
+      charsEl.textContent = String(editor.value.length);
+    }
+
+    function setText(text, { announce = true, fromClipboard = false } = {}) {
+      editor.value = text ?? "";
+      dirty = !fromClipboard;
+      caretStats();
+      if (fromClipboard) {
+        tabName.textContent = "Clipboard";
+        document.title = "Clipboard — Notepad";
+      }
+      if (announce) showToast("Pasted from clipboard");
+    }
+
+    async function readClipboard() {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        throw new Error("Clipboard API not available in this browser");
+      }
+      return navigator.clipboard.readText();
+    }
+
+    async function pasteFromClipboard({ silentIfSame = false } = {}) {
+      try {
+        const text = await readClipboard();
+        if (text == null) return false;
+        if (silentIfSame && text === lastClip) return false;
+        if (text === "") {
+          statusMsg.textContent = "Clipboard is empty";
+          lastClip = text;
+          return false;
+        }
+        lastClip = text;
+        setText(text, { fromClipboard: true });
+        statusMsg.textContent = "Auto-pasted " + new Date().toLocaleTimeString();
+        return true;
+      } catch (err) {
+        statusMsg.textContent = "Clipboard blocked — click Paste now";
+        throw err;
+      }
+    }
+
+    async function unlock() {
+      try {
+        await pasteFromClipboard();
+        gate.classList.add("hidden");
+        editor.focus();
+      } catch (err) {
+        statusMsg.textContent = err.message || "Allow clipboard access, then try again";
+        showToast("Clipboard permission needed");
+      }
+    }
+
+    async function watchTick() {
+      if (!watch || !gate.classList.contains("hidden")) return;
+      if (document.visibilityState !== "visible") return;
+      try {
+        const text = await readClipboard();
+        if (text && text !== lastClip) {
+          lastClip = text;
+          setText(text, { fromClipboard: true });
+          statusMsg.textContent = "Auto-pasted " + new Date().toLocaleTimeString();
+        }
+      } catch {
+        /* permission revoked or no gesture — user can hit Paste now */
+      }
+    }
+
+    document.getElementById("unlock").addEventListener("click", unlock);
+    document.getElementById("btnPaste").addEventListener("click", async () => {
+      try {
+        await pasteFromClipboard();
+        gate.classList.add("hidden");
+        editor.focus();
+      } catch {
+        showToast("Couldn't read clipboard");
+      }
+    });
+
+    document.getElementById("btnWatch").addEventListener("click", () => {
+      watch = !watch;
+      watchPill.classList.toggle("off", !watch);
+      watchPill.innerHTML = watch ? "<i></i> Auto-paste on" : "<i></i> Auto-paste off";
+      statusMsg.textContent = watch ? "Watching clipboard…" : "Auto-paste paused";
+    });
+
+    document.getElementById("btnNew").addEventListener("click", () => {
+      editor.value = "";
+      lastClip = null;
+      dirty = false;
+      tabName.textContent = "Untitled";
+      document.title = "Untitled — Notepad";
+      caretStats();
+      editor.focus();
+    });
+
+    document.getElementById("btnOpen").addEventListener("click", () => {
+      document.getElementById("fileOpen").click();
+    });
+    document.getElementById("fileOpen").addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      setText(await file.text(), { announce: false });
+      tabName.textContent = file.name;
+      document.title = file.name + " — Notepad";
+      gate.classList.add("hidden");
+      e.target.value = "";
+    });
+
+    document.getElementById("btnSave").addEventListener("click", () => {
+      const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      const name = (tabName.textContent || "Untitled").replace(/[^\w.\- ]+/g, "") || "Untitled";
+      a.href = URL.createObjectURL(blob);
+      a.download = name.endsWith(".txt") ? name : name + ".txt";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    editor.addEventListener("input", () => { dirty = true; caretStats(); });
+    editor.addEventListener("click", caretStats);
+    editor.addEventListener("keyup", caretStats);
+    document.addEventListener("selectionchange", caretStats);
+
+    document.addEventListener("paste", (e) => {
+      if (document.activeElement === editor) return;
+      const text = e.clipboardData && e.clipboardData.getData("text");
+      if (text == null) return;
+      e.preventDefault();
+      lastClip = text;
+      setText(text, { fromClipboard: true });
+      gate.classList.add("hidden");
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") watchTick();
+    });
+    window.addEventListener("focus", watchTick);
+    setInterval(watchTick, 700);
+
+    caretStats();
+  </script>
+</body>
+</html>
