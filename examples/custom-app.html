@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice app — Auto-paste target</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1117;
+      --panel: #171a22;
+      --ink: #eef1f7;
+      --muted: #8b93a7;
+      --line: #2a3040;
+      --accent: #5b8cff;
+      --stop: #d0122d;
+      --good: #3dce86;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Outfit, Segoe UI, system-ui, sans-serif;
+      background: radial-gradient(900px 500px at 10% -10%, #1c2744 0%, transparent 50%), var(--bg);
+      color: var(--ink);
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      min-height: 100%;
+    }
+    @media (max-width: 800px) {
+      body { grid-template-columns: 1fr; }
+    }
+    aside {
+      padding: 22px 20px;
+      border-right: 1px solid var(--line);
+      background: #12141b;
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.03em; }
+    p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    ol { color: var(--muted); font-size: 13px; line-height: 1.55; padding-left: 18px; }
+    code { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12px; }
+    .stop {
+      width: 100%; border: 0; cursor: pointer;
+      background: var(--stop); color: #fff;
+      font: 800 22px Outfit, sans-serif;
+      padding: 16px 12px; border-radius: 12px;
+      letter-spacing: 0.08em;
+    }
+    .stop[disabled] { opacity: 0.45; cursor: default; }
+    .go {
+      width: 100%; border: 0; cursor: pointer;
+      background: var(--accent); color: #fff;
+      font: 700 14px Outfit, sans-serif;
+      padding: 10px 12px; border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .ghost {
+      width: 100%; border: 1px solid var(--line); cursor: pointer;
+      background: transparent; color: var(--ink);
+      font: 600 13px Outfit, sans-serif;
+      padding: 8px 12px; border-radius: 10px;
+      margin: 8px 0 16px;
+    }
+    .stat { font-size: 12px; color: var(--muted); margin: 8px 0 14px; }
+    main { display: flex; flex-direction: column; min-height: 100%; }
+    header {
+      padding: 16px 20px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    header strong { font-size: 14px; }
+    header span { color: var(--muted); font-size: 12px; }
+    .log {
+      flex: 1; overflow: auto; padding: 18px 20px 8px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .msg {
+      align-self: flex-end;
+      max-width: min(520px, 90%);
+      background: #243056;
+      border: 1px solid #33457a;
+      border-radius: 12px 12px 4px 12px;
+      padding: 8px 12px;
+      font: 14px/1.4 Outfit, sans-serif;
+      white-space: pre-wrap;
+    }
+    .msg.system {
+      align-self: center;
+      background: transparent; border: 0;
+      color: var(--muted); font-size: 12px;
+    }
+    .composer {
+      padding: 12px 16px 18px;
+      border-top: 1px solid var(--line);
+      display: flex; gap: 8px;
+    }
+    #box {
+      flex: 1; resize: none; min-height: 48px; max-height: 120px;
+      background: var(--panel); color: var(--ink);
+      border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px 14px;
+      font: 14px/1.4 Outfit, sans-serif;
+      outline: none;
+    }
+    #box:focus { border-color: var(--accent); }
+    .send {
+      border: 0; cursor: pointer;
+      background: var(--good); color: #0b1a12;
+      font: 700 13px Outfit, sans-serif;
+      border-radius: 12px; padding: 0 16px;
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <h1>Practice target</h1>
+    <p>This page is a stand-in for Chrome, Discord, or Word. Click the text box, then let Auto-paste copy → paste → Enter.</p>
+    <ol>
+      <li>Run <code>3-Start.bat</code> on Windows.</li>
+      <li>Click <strong>START</strong> on the red STOP window.</li>
+      <li>Click this text box during the countdown.</li>
+      <li>Each unique line from <code>links.txt</code> is pasted and sent.</li>
+    </ol>
+    <p>Or try the in-page demo (no desktop keys). It sends 4 unique lines every 5 seconds into this chat until you hit STOP.</p>
+    <button class="go" id="demoStart" type="button">START in-page demo</button>
+    <button class="stop" id="stop" type="button" disabled>STOP</button>
+    <button class="ghost" id="reset" type="button">Reset used + log</button>
+    <div class="stat" id="stat">Idle · 4 lines / 5 seconds · never repeats</div>
+  </aside>
+  <main>
+    <header>
+      <strong>custom-app</strong>
+      <span>Click the composer, then paste lands here</span>
+    </header>
+    <div class="log" id="log">
+      <div class="msg system">Waiting. Click the box below so it has focus.</div>
+    </div>
+    <form class="composer" id="form">
+      <textarea id="box" placeholder="Click here, then let Auto-paste send…" rows="2"></textarea>
+      <button class="send" type="submit">Enter</button>
+    </form>
+  </main>
+  <script>
+    const log = document.getElementById("log");
+    const box = document.getElementById("box");
+    const form = document.getElementById("form");
+    const stat = document.getElementById("stat");
+    const stopBtn = document.getElementById("stop");
+    const USED_KEY = "auto-paste-custom-used";
+
+    const demoLines = [
+      "unique-line-one",
+      "unique-line-two",
+      "unique-line-three",
+      "unique-line-four",
+      "unique-line-five",
+      "unique-line-six",
+      "unique-line-seven",
+      "unique-line-eight",
+    ];
+
+    let used = loadUsed();
+    let stopFlag = true;
+    let timer = 0;
+
+    function loadUsed() {
+      try { return new Set(JSON.parse(localStorage.getItem(USED_KEY) || "[]")); }
+      catch { return new Set(); }
+    }
+    function saveUsed() {
+      localStorage.setItem(USED_KEY, JSON.stringify([...used]));
+    }
+
+    function addMsg(text, system) {
+      const el = document.createElement("div");
+      el.className = system ? "msg system" : "msg";
+      el.textContent = text;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function submitBox() {
+      const text = box.value.replace(/\s+$/, "");
+      if (!text) return;
+      addMsg(text);
+      used.add(text);
+      saveUsed();
+      box.value = "";
+      stat.textContent = "Received · " + used.size + " unique so far";
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitBox();
+    });
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        submitBox();
+      }
+    });
+
+    function queue() {
+      return demoLines.filter((line) => !used.has(line));
+    }
+
+    async function runDemo() {
+      stopFlag = false;
+      stopBtn.disabled = false;
+      const items = queue();
+      if (!items.length) {
+        stat.textContent = "Nothing left — hit Reset used";
+        stopBtn.disabled = true;
+        return;
+      }
+      const interval = 5000 / 4;
+      box.focus();
+      for (let i = 0; i < items.length; i++) {
+        if (stopFlag) {
+          addMsg("STOP", true);
+          stat.textContent = "Stopped · " + used.size + " unique sent";
+          stopBtn.disabled = true;
+          return;
+        }
+        stat.textContent = "Sending " + (i + 1) + "/" + items.length + " · next in " + (interval / 1000) + "s";
+        box.value = items[i];
+        submitBox();
+        if (i < items.length - 1) {
+          await new Promise((resolve) => {
+            timer = setTimeout(resolve, interval);
+          });
+        }
+      }
+      stat.textContent = "Done · " + used.size + " unique sent";
+      stopBtn.disabled = true;
+    }
+
+    document.getElementById("demoStart").addEventListener("click", () => {
+      clearTimeout(timer);
+      runDemo();
+    });
+    stopBtn.addEventListener("click", () => {
+      stopFlag = true;
+      clearTimeout(timer);
+      stopBtn.disabled = true;
+    });
+    document.getElementById("reset").addEventListener("click", () => {
+      stopFlag = true;
+      clearTimeout(timer);
+      used = new Set();
+      saveUsed();
+      log.innerHTML = "";
+      addMsg("Reset. Ready for a new run.", true);
+      stat.textContent = "Idle · 4 lines / 5 seconds · never repeats";
+      stopBtn.disabled = true;
+      box.focus();
+    });
+
+    box.focus();
+  </script>
+</body>
+</html>

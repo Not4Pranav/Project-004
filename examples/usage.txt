@@ -1,0 +1,47 @@
+Auto-paste — command examples
+=============================
+
+Windows (double-click)
+  1-Install.bat
+  2-Edit-list.bat
+  3-Start.bat          send unique lines (copy → paste → Enter)
+  START.bat
+  OPEN-WEB.bat
+  examples\custom-app.html
+
+Windows (terminal)
+  auto_paste.bat --send
+  auto_paste.bat --send --reset-used
+  auto_paste.bat --send --dry-run --no-gui --countdown 0
+  auto_paste.bat
+  auto_paste.bat --watch
+  auto_paste.bat --live --watch
+  auto_paste.bat --list
+  auto_paste.bat --next
+  auto_paste.bat --save-clip
+  auto_paste.bat --collect
+  auto_paste.bat --doctor
+
+PowerShell
+  .\auto_paste.ps1 -Watch
+  .\auto_paste.ps1 -Live -Append
+  .\auto_paste.ps1 -List
+  .\auto_paste.ps1 -Next
+  .\auto_paste.ps1 -Collect
+
+Python (Windows, macOS, Linux)
+  python auto_paste.py
+  python auto_paste.py --watch
+  python auto_paste.py --list --list-file examples/sample-links.txt
+  python auto_paste.py --next
+  python auto_paste.py --save-clip
+  python auto_paste.py --collect
+  python auto_paste.py --doctor
+
+Node (optional)
+  node auto-paste.js --watch
+  node auto-paste.js --list
+  node auto-paste.js --doctor
+
+Tests
+  python test_auto_paste.py

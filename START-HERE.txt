@@ -1,0 +1,63 @@
+============================================================
+  AUTO-PASTE
+  Unique line  →  copy  →  paste  →  Enter
+  4 strings every 5 seconds     never repeats
+============================================================
+
+Fully automatic on Windows: each unused line from links.txt
+is copied, pasted into the software you clicked, then Enter
+is pressed. A red STOP button stays on top.
+
+
+WINDOWS — three double-clicks
+--------------------------------
+  1.  1-Install.bat        finds Python / Node / PowerShell
+  2.  2-Edit-list.bat      put one unique string per line
+  3.  3-Start.bat          red STOP window appears
+
+  Then:
+    Click START
+    Immediately click the text box in Chrome, Discord, Word…
+    Wait 3 seconds. Lines start landing + Enter.
+
+Same files, other names:
+  install.bat              =  1-Install.bat
+  EDIT-LINKS.bat           =  2-Edit-list.bat
+  START.bat                =  menu
+  OPEN-WEB.bat             =  browser notepad
+
+
+STOP
+--------------------------------
+  Big red STOP on the control window.
+  Or close that window. Or Ctrl+C in the console.
+
+
+THE LIST (links.txt)
+--------------------------------
+  One string per line. Duplicates are skipped.
+  Already-sent lines are remembered in .auto-paste-used
+  so a restart never sends the same string twice.
+  Use "Reset used" on the control window to start over.
+
+
+PRACTICE (no Discord / Word required)
+--------------------------------
+  Open examples\custom-app.html
+  Click the composer box, then run 3-Start.bat
+  Or use the in-page START / red STOP demo.
+
+
+NO INSTALL AT ALL
+--------------------------------
+  OPEN-WEB.bat  →  browser notepad
+  Send list     →  unique lines into the page, then Enter
+  Red STOP bar appears while sending.
+
+
+SAFETY
+--------------------------------
+  Only TEXT is copied and pasted. Nothing is executed.
+  Keys go to the window you clicked after START —
+  click the text box, not the title bar.
+  Hit STOP before walking away.

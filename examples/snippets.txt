@@ -1,0 +1,6 @@
+# Short text snippets you can swap in as links.txt
+
+On my way.
+Will follow up this afternoon.
+Please see the attached notes.
+Need 15 minutes — starting now.
