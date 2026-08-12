@@ -1,15 +1,12 @@
-# Auto-paste the clipboard into Windows Notepad.
-#   .\auto_paste.ps1
+# Auto-paste unique lines into the focused Windows app.
+#   .\auto_paste.ps1 -Send          # copy → Ctrl+V → Enter, red STOP
 #   .\auto_paste.ps1 -Watch
 #   .\auto_paste.ps1 -Live
-#   .\auto_paste.ps1 -Append
 #   .\auto_paste.ps1 -List
-#   .\auto_paste.ps1 -Next
-#   .\auto_paste.ps1 -SaveClip
-#   .\auto_paste.ps1 -Collect
 #   .\auto_paste.ps1 -Doctor
 
 param(
+    [switch]$Send,
     [switch]$Watch,
     [switch]$Live,
     [switch]$Append,
@@ -18,7 +15,12 @@ param(
     [switch]$SaveClip,
     [switch]$Collect,
     [switch]$Doctor,
+    [switch]$ResetUsed,
+    [switch]$DryRun,
     [double]$Interval = 0.6,
+    [double]$Countdown = 3,
+    [int]$RateCount = 4,
+    [double]$RateWindow = 5,
     [string]$ListFile = ""
 )
 
@@ -27,6 +29,7 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $ListFile) { $ListFile = Join-Path $here "links.txt" }
 $path = Join-Path $env:TEMP "auto-paste-notepad.txt"
 $cursorPath = Join-Path (Split-Path -Parent $ListFile) ".auto-paste-cursor"
+$usedPath = Join-Path (Split-Path -Parent $ListFile) ".auto-paste-used"
 
 function Get-ClipText {
     try {
@@ -92,6 +95,135 @@ function Paste-Live([string]$Text) {
     }
     Set-Clipboard -Value $Text
     [System.Windows.Forms.SendKeys]::SendWait("^v")
+}
+
+function Get-UsedItems {
+    if (-not (Test-Path $usedPath)) { return @() }
+    return Get-ListItems $usedPath
+}
+
+function Add-UsedItem([string]$Text) {
+    Add-Content -Path $usedPath -Value $Text -Encoding UTF8
+}
+
+function Get-UniqueUnused([object[]]$Items) {
+    $used = @{}
+    foreach ($u in (Get-UsedItems)) { $used[$u] = $true }
+    $seen = @{}
+    $out = @()
+    foreach ($item in $Items) {
+        if ($seen.ContainsKey($item)) { continue }
+        $seen[$item] = $true
+        if ($used.ContainsKey($item)) { continue }
+        $out += $item
+    }
+    return $out
+}
+
+function Send-PasteEnter {
+    Add-Type -AssemblyName System.Windows.Forms
+    [System.Windows.Forms.SendKeys]::SendWait("^v")
+    Start-Sleep -Milliseconds 40
+    [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+}
+
+function Start-SendSession {
+    Add-Type -AssemblyName System.Windows.Forms
+    if ($ResetUsed -and (Test-Path $usedPath)) { Remove-Item $usedPath -Force }
+
+    $script:stopFlag = $false
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Auto-paste — STOP"
+    $form.Size = New-Object System.Drawing.Size(460, 260)
+    $form.StartPosition = "CenterScreen"
+    $form.TopMost = $true
+    $form.BackColor = [System.Drawing.Color]::FromArgb(28, 29, 33)
+    $form.FormBorderStyle = "FixedDialog"
+    $form.MaximizeBox = $false
+
+    $title = New-Object System.Windows.Forms.Label
+    $title.Text = "AUTO-PASTE"
+    $title.ForeColor = [System.Drawing.Color]::White
+    $title.Font = New-Object System.Drawing.Font("Segoe UI", 14, [System.Drawing.FontStyle]::Bold)
+    $title.Location = New-Object System.Drawing.Point(16, 12)
+    $title.AutoSize = $true
+    $form.Controls.Add($title)
+
+    $hint = New-Object System.Windows.Forms.Label
+    $hint.Text = "$RateCount unique strings every ${RateWindow}s  ·  copy → paste → Enter"
+    $hint.ForeColor = [System.Drawing.Color]::Silver
+    $hint.Location = New-Object System.Drawing.Point(16, 42)
+    $hint.AutoSize = $true
+    $form.Controls.Add($hint)
+
+    $status = New-Object System.Windows.Forms.Label
+    $status.Text = "Click START, then click the text box (Chrome, Discord, Word…)."
+    $status.ForeColor = [System.Drawing.Color]::Khaki
+    $status.Location = New-Object System.Drawing.Point(16, 70)
+    $status.Size = New-Object System.Drawing.Size(420, 40)
+    $form.Controls.Add($status)
+
+    $startBtn = New-Object System.Windows.Forms.Button
+    $startBtn.Text = "START"
+    $startBtn.BackColor = [System.Drawing.Color]::FromArgb(43, 93, 255)
+    $startBtn.ForeColor = [System.Drawing.Color]::White
+    $startBtn.FlatStyle = "Flat"
+    $startBtn.Location = New-Object System.Drawing.Point(16, 130)
+    $startBtn.Size = New-Object System.Drawing.Size(100, 56)
+    $form.Controls.Add($startBtn)
+
+    $stopBtn = New-Object System.Windows.Forms.Button
+    $stopBtn.Text = "STOP"
+    $stopBtn.BackColor = [System.Drawing.Color]::FromArgb(208, 18, 45)
+    $stopBtn.ForeColor = [System.Drawing.Color]::White
+    $stopBtn.FlatStyle = "Flat"
+    $stopBtn.Font = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold)
+    $stopBtn.Location = New-Object System.Drawing.Point(126, 130)
+    $stopBtn.Size = New-Object System.Drawing.Size(200, 56)
+    $form.Controls.Add($stopBtn)
+
+    $stopBtn.Add_Click({ $script:stopFlag = $true; $status.Text = "STOP" })
+    $form.Add_FormClosing({ $script:stopFlag = $true })
+
+    $startBtn.Add_Click({
+        $startBtn.Enabled = $false
+        $items = Get-UniqueUnused (Get-ListItems $ListFile)
+        if ($items.Count -eq 0) {
+            $status.Text = "Nothing left to send. Edit the list or delete .auto-paste-used."
+            $startBtn.Enabled = $true
+            return
+        }
+        $interval = $RateWindow / [Math]::Max(1, $RateCount)
+        $script:stopFlag = $false
+        for ($t = [int]$Countdown; $t -gt 0; $t--) {
+            if ($script:stopFlag) { $status.Text = "STOP"; return }
+            $status.Text = "Click the text box now — sending in $t…"
+            [System.Windows.Forms.Application]::DoEvents()
+            Start-Sleep -Seconds 1
+        }
+        $n = 0
+        foreach ($item in $items) {
+            if ($script:stopFlag) { $status.Text = "STOP — sent $n"; return }
+            $n++
+            $status.Text = "Sending $n / $($items.Count): $item"
+            [System.Windows.Forms.Application]::DoEvents()
+            Set-Clipboard -Value $item
+            if (-not $DryRun) { Send-PasteEnter }
+            Add-UsedItem $item
+            if ($n -lt $items.Count) {
+                $waited = 0.0
+                while ($waited -lt $interval) {
+                    if ($script:stopFlag) { $status.Text = "STOP — sent $n"; return }
+                    Start-Sleep -Milliseconds 100
+                    $waited += 0.1
+                    [System.Windows.Forms.Application]::DoEvents()
+                }
+            }
+        }
+        $status.Text = "Done. Sent $n unique line(s)."
+    })
+
+    [void]$form.ShowDialog()
 }
 
 function Apply([string]$Text) {

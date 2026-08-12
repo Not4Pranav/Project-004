@@ -3,4 +3,5 @@ __pycache__/
 .DS_Store
 *.tmp
 .auto-paste-cursor
+.auto-paste-used
 .installed

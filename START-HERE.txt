@@ -1,53 +1,63 @@
 ============================================================
   AUTO-PASTE
-  Copy once. It lands in Notepad.
+  Unique line  →  copy  →  paste  →  Enter
+  4 strings every 5 seconds     never repeats
 ============================================================
 
-You do not type Ctrl+V. Copy a string (or keep a list of
-links) and Auto-paste puts it into Notepad for you.
+Fully automatic on Windows: each unused line from links.txt
+is copied, pasted into the software you clicked, then Enter
+is pressed. A red STOP button stays on top.
 
 
 WINDOWS — three double-clicks
 --------------------------------
   1.  1-Install.bat        finds Python / Node / PowerShell
-  2.  2-Edit-list.bat      optional — edit your saved list
-  3.  3-Start.bat          watch the clipboard
+  2.  2-Edit-list.bat      put one unique string per line
+  3.  3-Start.bat          red STOP window appears
+
+  Then:
+    Click START
+    Immediately click the text box in Chrome, Discord, Word…
+    Wait 3 seconds. Lines start landing + Enter.
 
 Same files, other names:
   install.bat              =  1-Install.bat
   EDIT-LINKS.bat           =  2-Edit-list.bat
-  START.bat                =  menu (watch / list / live / web)
-  OPEN-WEB.bat             =  browser notepad, no install
+  START.bat                =  menu
+  OPEN-WEB.bat             =  browser notepad
 
 
-NO INSTALL AT ALL
+STOP
 --------------------------------
-  Double-click OPEN-WEB.bat
-  Click  "Paste clipboard & keep watching"
-  Copy anything. It appears on the page.
+  Big red STOP on the control window.
+  Or close that window. Or Ctrl+C in the console.
 
 
 THE LIST (links.txt)
 --------------------------------
-  One string or URL per line.
-  Lines starting with # are ignored.
-
-  START.bat → "Paste everything in links.txt"
-  START.bat → "Paste the next item"
-  START.bat → "Collect copies into links.txt"
+  One string per line. Duplicates are skipped.
+  Already-sent lines are remembered in .auto-paste-used
+  so a restart never sends the same string twice.
+  Use "Reset used" on the control window to start over.
 
 
-OTHER COMPUTERS
+PRACTICE (no Discord / Word required)
 --------------------------------
-  python auto_paste.py --watch
-  node auto-paste.js --watch
+  Open examples\custom-app.html
+  Click the composer box, then run 3-Start.bat
+  Or use the in-page START / red STOP demo.
 
-  Read README.md and INSTALL.md for macOS / Linux.
+
+NO INSTALL AT ALL
+--------------------------------
+  OPEN-WEB.bat  →  browser notepad
+  Send list     →  unique lines into the page, then Enter
+  Red STOP bar appears while sending.
 
 
 SAFETY
 --------------------------------
-  Auto-paste only writes TEXT into Notepad (or the web page).
-  It never runs what you copy, never opens random programs,
-  and never types into other apps unless you pick
-  "Live-paste" (Notepad only).
+  Only TEXT is copied and pasted. Nothing is executed.
+  Keys go to the window you clicked after START —
+  click the text box, not the title bar.
+  Hit STOP before walking away.

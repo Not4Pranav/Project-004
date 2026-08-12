@@ -244,5 +244,138 @@ class CliTests(unittest.TestCase):
         self.assertEqual(opened, ["copied"])
 
 
+class UniqueAndUsedTests(unittest.TestCase):
+    def test_unique_preserves_order(self) -> None:
+        self.assertEqual(ap.unique_lines(["a", "b", "a", "c", "b"]), ["a", "b", "c"])
+
+    def test_unused_filters_used_and_dupes(self) -> None:
+        self.assertEqual(
+            ap.unused_lines(["a", "b", "a", "c"], {"b"}),
+            ["a", "c"],
+        )
+
+    def test_used_file_roundtrip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "links.txt"
+            self.assertEqual(ap.load_used(path), set())
+            ap.append_used(path, "one")
+            ap.append_used(path, "two")
+            self.assertEqual(ap.load_used(path), {"one", "two"})
+            ap.clear_used(path)
+            self.assertEqual(ap.load_used(path), set())
+
+    def test_interval_is_four_per_five(self) -> None:
+        self.assertAlmostEqual(ap.send_interval(4, 5), 1.25)
+
+    def test_next_allowed_at_caps_rate(self) -> None:
+        times = [0.0, 1.0, 2.0, 3.0]
+        self.assertEqual(ap.next_allowed_at(times, now=3.0, rate_count=4, rate_window=5.0), 5.0)
+        self.assertEqual(ap.next_allowed_at(times, now=5.1, rate_count=4, rate_window=5.0), 5.1)
+
+
+class SendSessionTests(unittest.TestCase):
+    def test_copies_pastes_enters_marks_used(self) -> None:
+        copied: list[str] = []
+        pastes = {"n": 0}
+        used: list[str] = []
+        result = ap.run_send_session(
+            ["one", "one", "two", "three"],
+            used={"three"},
+            mark_used=used.append,
+            copy_text=copied.append,
+            paste_enter=lambda: pastes.__setitem__("n", pastes["n"] + 1),
+            sleep=lambda _dt: None,
+            countdown=0,
+            rate_count=4,
+            rate_window=5,
+        )
+        self.assertEqual(copied, ["one", "two"])
+        self.assertEqual(pastes["n"], 2)
+        self.assertEqual(used, ["one", "two"])
+        self.assertEqual(result["sent"], 2)
+        self.assertEqual(result["skipped"], 1)
+        self.assertFalse(result["stopped"])
+
+    def test_stop_midway(self) -> None:
+        copied: list[str] = []
+        calls = {"n": 0}
+
+        def should_stop() -> bool:
+            return len(copied) >= 2
+
+        def sleeper(_dt: float) -> None:
+            calls["n"] += 1
+
+        result = ap.run_send_session(
+            ["a", "b", "c", "d"],
+            copy_text=copied.append,
+            paste_enter=lambda: None,
+            should_stop=should_stop,
+            sleep=sleeper,
+            countdown=0,
+        )
+        self.assertEqual(copied, ["a", "b"])
+        self.assertTrue(result["stopped"])
+        self.assertEqual(result["sent"], 2)
+        self.assertEqual(result["remaining"], 2)
+
+    def test_countdown_can_be_stopped(self) -> None:
+        result = ap.run_send_session(
+            ["a"],
+            copy_text=lambda _t: None,
+            paste_enter=lambda: None,
+            should_stop=lambda: True,
+            sleep=lambda _dt: None,
+            countdown=3,
+        )
+        self.assertTrue(result["stopped"])
+        self.assertEqual(result["sent"], 0)
+
+    def test_dry_run_does_not_press_keys(self) -> None:
+        pastes = {"n": 0}
+        copied: list[str] = []
+        ap.run_send_session(
+            ["x"],
+            copy_text=copied.append,
+            paste_enter=lambda: pastes.__setitem__("n", pastes["n"] + 1),
+            sleep=lambda _dt: None,
+            dry_run=True,
+            countdown=0,
+        )
+        self.assertEqual(copied, ["x"])
+        self.assertEqual(pastes["n"], 0)
+
+    def test_send_cli_no_gui_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "empty.txt"
+            path.write_text("# none\n", encoding="utf-8")
+            code = ap.main(["--send", "--no-gui", "--list-file", str(path)])
+            self.assertEqual(code, 1)
+
+    def test_send_cli_dry_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "links.txt"
+            path.write_text("alpha\nbeta\nalpha\n", encoding="utf-8")
+            copied: list[str] = []
+            with patch.object(ap, "set_clipboard", side_effect=copied.append):
+                with patch.object(ap, "send_paste_enter"):
+                    code = ap.main(
+                        [
+                            "--send",
+                            "--no-gui",
+                            "--dry-run",
+                            "--countdown",
+                            "0",
+                            "--rate-window",
+                            "0.01",
+                            "--list-file",
+                            str(path),
+                        ]
+                    )
+            self.assertEqual(code, 0)
+            self.assertEqual(copied, ["alpha", "beta"])
+            self.assertEqual(ap.load_used(path), {"alpha", "beta"})
+
+
 if __name__ == "__main__":
     raise SystemExit(unittest.main(verbosity=2))

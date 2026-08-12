@@ -35,6 +35,12 @@ function parseArgs(argv) {
     saveClip: false,
     collect: false,
     doctor: false,
+    send: false,
+    dryRun: false,
+    resetUsed: false,
+    countdown: 3,
+    rateCount: 4,
+    rateWindow: 5,
     interval: 0.6,
     listFile: DEFAULT_LIST,
     help: false,
@@ -49,8 +55,15 @@ function parseArgs(argv) {
     else if (a === "--save-clip") args.saveClip = true;
     else if (a === "--collect") args.collect = true;
     else if (a === "--doctor") args.doctor = true;
+    else if (a === "--send") args.send = true;
+    else if (a === "--dry-run") args.dryRun = true;
+    else if (a === "--reset-used") args.resetUsed = true;
+    else if (a === "--no-gui") args.noGui = true;
     else if (a === "--help" || a === "-h") args.help = true;
     else if (a === "--interval") args.interval = Number(argv[++i]);
+    else if (a === "--countdown") args.countdown = Number(argv[++i]);
+    else if (a === "--rate-count") args.rateCount = Number(argv[++i]);
+    else if (a === "--rate-window") args.rateWindow = Number(argv[++i]);
     else if (a === "--list-file") args.listFile = argv[++i];
     else throw new Error("Unknown argument: " + a);
   }
@@ -81,6 +94,56 @@ function appendToList(file, text) {
   }
   fs.appendFileSync(file, prefix + item + "\n", "utf8");
   return true;
+}
+
+function usedPath(listFile) {
+  return path.join(path.dirname(listFile), ".auto-paste-used");
+}
+
+function loadUsed(listFile) {
+  const p = usedPath(listFile);
+  if (!fs.existsSync(p)) return new Set();
+  return new Set(parseList(fs.readFileSync(p, "utf8")));
+}
+
+function appendUsed(listFile, item) {
+  fs.appendFileSync(usedPath(listFile), item + "\n", "utf8");
+}
+
+function uniqueUnused(items, used) {
+  const seen = new Set();
+  const out = [];
+  for (const item of items) {
+    if (seen.has(item) || used.has(item)) continue;
+    seen.add(item);
+    out.push(item);
+  }
+  return out;
+}
+
+function setClipboard(text) {
+  if (process.platform === "win32") {
+    spawnSync("powershell", ["-NoProfile", "-Command", "Set-Clipboard -Value @'\n" + String(text).replace(/'/g, "''") + "\n'@"], {
+      encoding: "utf8",
+    });
+    return;
+  }
+  if (process.platform === "darwin") {
+    spawnSync("pbcopy", [], { input: text });
+    return;
+  }
+  spawnSync("xclip", ["-selection", "clipboard"], { input: text });
+}
+
+function sendPasteEnter() {
+  if (process.platform !== "win32") {
+    throw new Error("Focused-app send is Windows-only. Use examples/custom-app.html.");
+  }
+  spawnSync("powershell", [
+    "-NoProfile",
+    "-Command",
+    "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v'); Start-Sleep -Milliseconds 40; [System.Windows.Forms.SendKeys]::SendWait('{ENTER}')",
+  ]);
 }
 
 function cursorPath(listFile) {
@@ -205,6 +268,9 @@ Usage:
   node auto-paste.js [options]
 
 Options:
+  --send           Unique lines → copy → paste → Enter (Windows)
+  --dry-run        Copy only, do not press keys
+  --reset-used     Forget already-sent lines
   --watch          Re-paste when the clipboard changes
   --live           Windows live paste (falls back to file open in Node)
   --append         Append instead of replace

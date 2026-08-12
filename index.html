@@ -22,6 +22,7 @@
       --shadow: 0 24px 60px rgba(28, 32, 48, 0.16);
       --rule: rgba(80, 110, 180, 0.09);
       --drawer: 300px;
+      --stop: #d0122d;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
@@ -236,6 +237,25 @@
     }
     .statusbar b { color: var(--ink); font-weight: 600; }
 
+    .stopbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #1c1d21;
+      color: #fff;
+    }
+    .desk.sending .stopbar { display: flex; }
+    .stopbar span { font-size: 13px; }
+    .stopbar button {
+      border: 0; cursor: pointer;
+      background: var(--stop); color: #fff;
+      font: 800 16px Outfit, sans-serif;
+      letter-spacing: 0.08em;
+      padding: 10px 28px; border-radius: 10px;
+    }
+
     input[type="file"] { display: none; }
 
     @media (max-width: 720px) {
@@ -259,12 +279,17 @@
       <div class="win-btns" aria-hidden="true"><span></span><span></span><span></span></div>
     </div>
 
+    <div class="stopbar" id="stopbar">
+      <span id="sendStatus">Sending unique lines — 4 every 5 seconds</span>
+      <button type="button" id="btnStop">STOP</button>
+    </div>
     <div class="menubar">
       <button type="button" id="btnNew">New</button>
       <button type="button" id="btnOpen">Open</button>
       <button type="button" id="btnSave">Save</button>
       <button type="button" id="btnPaste">Paste now</button>
       <button type="button" id="btnList">List</button>
+      <button type="button" id="btnSend" title="Send each unique list line into this notepad, then Enter. 4 every 5 seconds.">Send list</button>
       <span class="grow"></span>
       <button type="button" class="ghost" id="btnAppend" title="Append new copies under the current text">
         <span class="pill off" id="appendPill"><i></i> Replace</span>
@@ -310,6 +335,7 @@
           <button type="button" id="btnImport">Import</button>
           <button type="button" id="btnExport">Export</button>
           <button type="button" id="btnClearList">Clear</button>
+          <button type="button" id="btnResetUsed">Reset used</button>
         </div>
         <div class="list" id="list"></div>
       </aside>
@@ -342,6 +368,7 @@
     const help = document.getElementById("help");
 
     const LIST_KEY = "auto-paste-list";
+    const USED_KEY = "auto-paste-used";
 
     let watch = true;
     let appendMode = false;
@@ -349,6 +376,9 @@
     let toastTimer = 0;
     let dirty = false;
     let items = loadStoredList();
+    let used = loadUsed();
+    let sending = false;
+    let stopFlag = false;
 
     function loadStoredList() {
       try {
@@ -363,6 +393,31 @@
 
     function saveStoredList() {
       localStorage.setItem(LIST_KEY, JSON.stringify(items));
+    }
+
+    function loadUsed() {
+      try {
+        const raw = localStorage.getItem(USED_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        return new Set();
+      }
+    }
+
+    function saveUsed() {
+      localStorage.setItem(USED_KEY, JSON.stringify([...used]));
+    }
+
+    function uniqueUnused(list) {
+      const seen = new Set();
+      const out = [];
+      list.forEach((item) => {
+        if (seen.has(item) || used.has(item)) return;
+        seen.add(item);
+        out.push(item);
+      });
+      return out;
     }
 
     function parseListText(text) {
@@ -514,6 +569,52 @@
 
     document.getElementById("btnList").addEventListener("click", () => {
       desk.classList.toggle("list-open");
+    });
+
+    const sendStatus = document.getElementById("sendStatus");
+    document.getElementById("btnStop").addEventListener("click", () => {
+      stopFlag = true;
+      sending = false;
+      desk.classList.remove("sending");
+      statusMsg.textContent = "STOP";
+      showToast("Stopped");
+    });
+
+    document.getElementById("btnSend").addEventListener("click", async () => {
+      if (sending) return;
+      const queue = uniqueUnused(items);
+      if (!queue.length) {
+        desk.classList.add("list-open");
+        showToast("Nothing unused — import links.txt or clear used");
+        return;
+      }
+      sending = true;
+      stopFlag = false;
+      desk.classList.add("sending");
+      gate.classList.add("hidden");
+      const interval = 5000 / 4;
+      for (let i = 0; i < queue.length; i++) {
+        if (stopFlag) break;
+        const item = queue[i];
+        sendStatus.textContent = "Sending " + (i + 1) + "/" + queue.length + " — 4 every 5s";
+        statusMsg.textContent = "Sent " + item.slice(0, 40);
+        if (appendMode && editor.value) {
+          editor.value = (editor.value.endsWith("\n") ? editor.value : editor.value + "\n") + item + "\n";
+        } else if (i === 0 && !appendMode) {
+          editor.value = item + "\n";
+        } else {
+          editor.value += (editor.value.endsWith("\n") ? "" : "\n") + item + "\n";
+        }
+        used.add(item);
+        saveUsed();
+        caretStats();
+        if (i < queue.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, interval));
+        }
+      }
+      sending = false;
+      desk.classList.remove("sending");
+      if (!stopFlag) showToast("Done — unique lines sent");
     });
 
     document.getElementById("btnNew").addEventListener("click", () => {

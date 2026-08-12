@@ -4,11 +4,15 @@ Auto-paste — command examples
 Windows (double-click)
   1-Install.bat
   2-Edit-list.bat
-  3-Start.bat
+  3-Start.bat          send unique lines (copy → paste → Enter)
   START.bat
   OPEN-WEB.bat
+  examples\custom-app.html
 
 Windows (terminal)
+  auto_paste.bat --send
+  auto_paste.bat --send --reset-used
+  auto_paste.bat --send --dry-run --no-gui --countdown 0
   auto_paste.bat
   auto_paste.bat --watch
   auto_paste.bat --live --watch

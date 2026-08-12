@@ -1,10 +1,14 @@
-# Auto-paste list — one string or URL per line.
-# Lines starting with # are ignored. Blank lines are ignored.
-# Edit this file with 2-Edit-list.bat or EDIT-LINKS.bat.
+# Auto-paste list — one unique string per line.
+# Duplicates and # comments are ignored.
+# Already-sent lines are stored in .auto-paste-used (never repeat).
+# Edit with 2-Edit-list.bat / EDIT-LINKS.bat.
 
-https://example.com
-https://example.org
-https://wikipedia.org
+unique-demo-one
+unique-demo-two
+unique-demo-three
+unique-demo-four
+unique-demo-five
+unique-demo-six
+unique-demo-seven
+unique-demo-eight
 
-# Snippets work too, not just links:
-Auto-paste demo — copied from links.txt
