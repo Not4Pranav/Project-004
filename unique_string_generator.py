@@ -34,6 +34,7 @@ class UniqueStringApp(tk.Tk):
         self.count_var = tk.StringVar(value="Generated: 0  |  Unique in session: 0")
         self.status_var = tk.StringVar(value="Ready. Generate, then copy. Paste yourself.")
         self.preview_var = tk.StringVar(value="")
+        self.auto_copy_var = tk.BooleanVar(value=True)
 
         self._build_ui()
 
@@ -179,10 +180,14 @@ class UniqueStringApp(tk.Tk):
             messagebox.showerror("Generator", str(exc))
             return ""
         self.preview_var.set(value)
+        self.preview_box.selection_range(0, tk.END)
+        self.preview_box.focus_set()
         self.count_var.set(
             f"Generated: {len(self.used)}  |  Unique in session: {len(self.used)}"
         )
         self.status_var.set("New unique string ready. Copy it, then paste yourself.")
+        if self.auto_copy_var.get():
+            self.copy_current()
         return value
 
     def _allow_copy(self) -> bool:
