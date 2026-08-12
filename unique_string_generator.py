@@ -83,7 +83,7 @@ class UniqueStringApp(tk.Tk):
         length.grid(row=0, column=1, sticky="ew", padx=12, pady=12)
         card.columnconfigure(1, weight=1)
 
-        preview_box = tk.Entry(
+        self.preview_box = tk.Entry(
             self,
             textvariable=self.preview_var,
             font=("Consolas", 14),
@@ -92,8 +92,19 @@ class UniqueStringApp(tk.Tk):
             insertbackground="#e4e4e7",
             relief="flat",
         )
-        preview_box.pack(fill="x", padx=16, pady=8)
-        preview_box.configure(state="readonly")
+        self.preview_box.pack(fill="x", padx=16, pady=8)
+
+        tk.Checkbutton(
+            self,
+            text="Copy to clipboard automatically when generating",
+            variable=self.auto_copy_var,
+            bg="#111318",
+            fg="#d4d4d8",
+            selectcolor="#1b1e27",
+            activebackground="#111318",
+            activeforeground="#f4f4f5",
+            highlightthickness=0,
+        ).pack(anchor="w", padx=16)
 
         btns = tk.Frame(self, bg="#111318")
         btns.pack(fill="x", padx=16, pady=8)
@@ -216,9 +227,12 @@ class UniqueStringApp(tk.Tk):
         self.status_var.set("Copied to clipboard. Paste it yourself where you need it.")
 
     def generate_and_copy(self) -> None:
-        value = self.generate()
-        if value:
-            self.copy_current()
+        was_auto = self.auto_copy_var.get()
+        self.auto_copy_var.set(True)
+        try:
+            self.generate()
+        finally:
+            self.auto_copy_var.set(was_auto)
 
 
 if __name__ == "__main__":
